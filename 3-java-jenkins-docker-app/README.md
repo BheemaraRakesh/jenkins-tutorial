@@ -119,27 +119,85 @@ The provided `Jenkinsfile` automates the process:
 ```groovy
 pipeline {
     agent any
+
     stages {
+        stage('Clone GitHub Repository') {
+            steps {
+                git branch: 'main', changelog: false, poll: false, url: 'https://github.com/BheemaraRakesh/jenkins-tutorial.git'
+            }
+        }
         stage('Build') {
             steps {
-                sh 'mvn clean package'
+                dir('3-java-jenkins-docker-app') {
+                    // some block
+                    sh 'mvn clean package' 
+                }
             }
         }
         stage('Test') {
             steps {
-                sh 'mvn test'
+                dir('3-java-jenkins-docker-app') {
+                    // some block
+                    sh 'mvn test' 
+                }
             }
         }
-        stage('Docker Build') {
+        
+        stage('Compile') {
             steps {
-                sh 'docker build -t java-jenkins-docker:latest .'
+                dir('3-java-jenkins-docker-app') {
+                    // some block
+                    sh 'mvn compile' 
+                }
             }
         }
-        stage('Docker Run') {
+        stage('Docker image build') {
             steps {
-                sh 'docker run --rm java-jenkins-docker:latest'
+                dir('3-java-jenkins-docker-app') {
+                    // some block
+                    sh 'docker build -t java-jenkins-docker:latest .' 
+                }
             }
-        }        
+        }
+        stage('Docker run') {
+            steps {
+                dir('3-java-jenkins-docker-app') {
+                    // some block
+                    sh 'docker run --rm java-jenkins-docker:latest' 
+                }
+            }
+        }
+        stage('Docker Image Tag') {
+            steps {
+                dir('3-java-jenkins-docker-app') {
+                    sh 'docker tag java-jenkins-docker:latest bheemararakesh/java-jenkins-docker:latest'
+                }
+            }
+        }
+        stage('Docker Login') {
+            steps {
+                dir('3-java-jenkins-docker-app') {
+                    withCredentials([usernamePassword(credentialsId: 'dockerhub', passwordVariable: 'PASSWD', usernameVariable: 'USERNAME')]) {
+                        // some block
+                        sh 'docker login -u $USERNAME -p $PASSWD'
+                    }
+                }
+            }
+        }
+        stage('Docker Image Push') {
+                steps {
+                    dir('3-java-jenkins-docker-app') {
+                        sh 'docker push bheemararakesh/java-jenkins-docker:latest'
+                }
+            }
+        }
+        stage('Clean Work Space') {
+            steps {
+                dir('3-java-jenkins-docker-app') {
+                  cleanWs()
+                }
+            }
+        }
     }
 }
 
